@@ -3,12 +3,16 @@ import os
 import torchvision
 from torch.utils.data import DataLoader
 import numpy as np
+from torch.utils.data import random_split
 import matplotlib.pyplot as plt
 from sklearn.model_selection import ParameterGrid
 from collections.abc import Iterable
 from sklearn.utils import shuffle
 from collections import Counter
-from typing import Tuple
+from typing import Tuple, Dict
+from torchvision.datasets import Flowers102
+from torchvision.transforms import ToTensor, Compose, Lambda
+from torchvision.models import ViT_B_16_Weights
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -26,10 +30,12 @@ def check_labels(dataset: torchvision.datasets) -> None:
 
 
 def save_model(model, dir: str, model_name: str) -> None:
-    """Saves a model to a given directory - useful for training models with freezed and unfreezed params"""
-    curr_dir = os.getcwd()
+    """Saves a model to a given directory, eg. dir = "/models/new_model.pt".
+    Useful for training models with freezed and unfreezed params"""
+
+    # curr_dir = os.getcwd()
     path = f"/{dir}/"
-    path_to_model = path + f"{model_name}.pt"
+    # path_to_model = path + f"{model_name}.pt"
     exists = os.path.exists(path)
 
     if not exists:
@@ -51,6 +57,38 @@ def plot_img(img, preprocess, title=None) -> None:
     if title is not None:
         plt.title(f"Class: {int(title)}")
     plt.show()
+
+
+def load_and_transform(f: float = 0.8, weights = ViT_B_16_Weights.IMAGENET1K_V1) -> Dict:
+    """Load, transform and split Flowers102 dataset into train, valid and test datasets.
+    :param f: f fraction of the training dataset not allocated for a validation dataset;
+    :param weights: pretrained model weights;
+    :return: a dictionary with train, valid and test datasets"""
+
+    preprocess = weights.transforms()
+    transform = Compose([ToTensor(), Lambda(lambda x: preprocess(x))])
+
+    train_dataset = Flowers102(root='.', 
+                            split='train',
+                            download=True,
+                            transform=transform)
+
+    test_dataset = Flowers102(root='.', 
+                          split='test',
+                          download=True,
+                          transform=transform)
+
+    n_train = int(f*len(train_dataset))
+    n_valid = len(train_dataset) - n_train
+
+    train_dataset, valid_dataset = random_split(train_dataset, (n_train, n_valid))
+    print("Sizes of datasets: ", len(train_dataset), len(valid_dataset), len(test_dataset))
+
+    print("Checking training dataset: ")
+    check_labels(train_dataset)
+    print("Checking validation dataset: ")
+    check_labels(valid_dataset)
+    return {"train": train_dataset, "valid": valid_dataset, "test": test_dataset}
 
 
 def unfreeze_params(model, unfreeze_params: bool=False, all: bool=False) -> None:
@@ -182,7 +220,7 @@ def make_params_grid(param_grid, max_num_sets=None, randomize=True):
 
 def find_best_params(param_grid, max_num_sets, criterion, datasets, ViT_path: str,
                     unfreezed=False, at_beginning=False,
-                    ViT_best_path: str = "BEST_PARAMS_MODEL.pt") -> dict:
+                    ViT_best_path: str = "BEST_PARAMS_MODEL.pt") -> Dict:
 
     """Resturns a dictionary with best parameters for model training and loading the data"""
     best_params = {}
@@ -191,7 +229,6 @@ def find_best_params(param_grid, max_num_sets, criterion, datasets, ViT_path: st
     param_grid = make_params_grid(param_grid, max_num_sets, randomize=True)
 
     for i, params in enumerate(param_grid):
-        # model_valid_acc, model_test_acc = train_with_params(params, optimizer, criterion, datasets)
         model_valid_acc, trained_model = train_with_params(params=params, criterion=criterion, datasets=datasets, \
                                                           unfreezed=unfreezed, at_beginning=at_beginning, ViT_path=ViT_path)
         if max_num_sets > 1:
