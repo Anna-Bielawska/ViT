@@ -24,7 +24,7 @@ def check_labels(dataset: torchvision.datasets) -> None:
     check = Counter([str(label) for _, label in dataset])
     all_labels = all([False if str(i) not in check.keys() else True for i in range(0, 102)])
     if all_labels:
-      print("There's at leas 1 instance of each class")
+      print("There's at least 1 instance of each class")
     else:
       print("At least one class is not represented in this set")
 
@@ -181,7 +181,7 @@ def train_with_params(params: dict, criterion,  datasets: dict, ViT_path: str,
 
     if unfreezed:
         unfreeze_params(test_model, unfreeze_params=True, all=False)
-        print("After switching grads ON: ",len([p for p in test_model.parameters() if p.requires_grad]))
+        # print("After switching grads ON: ",len([p for p in test_model.parameters() if p.requires_grad]))
         optimizer2 = torch.optim.Adam([p for p in test_model.parameters() if p.requires_grad], lr=lr2)
         unfreeze_params(test_model, unfreeze_params=False, all=False)
 
@@ -198,10 +198,13 @@ def train_with_params(params: dict, criterion,  datasets: dict, ViT_path: str,
             run_epoch(test_model, optimizer, criterion, train_loader, optimizer2=optimizer2)
             # unfreeze_params(test_model, unfreeze_params=False)
         else:
+            if epoch == 0:
+                print("Model with parameters:", params)
             print(f"Training with freezed params, epoch = {epoch+1}")
             run_epoch(test_model, optimizer, criterion, train_loader)
 
     model_valid_acc = valid(test_model, valid_loader)
+    torch.cuda.empty_cache()
 
     return model_valid_acc, test_model
 
@@ -240,6 +243,7 @@ def find_best_params(param_grid, max_num_sets, criterion, datasets, ViT_path: st
             best_valid_acc = model_valid_acc
             best_params = params
             torch.save(trained_model, ViT_best_path)
+        torch.cuda.empty_cache()
 
     if max_num_sets > 1:
         print(f'Best params: {best_params}, best validation accuracy: {best_valid_acc:.4f}')
