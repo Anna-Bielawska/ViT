@@ -47,6 +47,7 @@ def save_model(model, dir: str, model_name: str) -> None:
 
 
 def plot_img(img, preprocess, title=None) -> None:
+    """Plots an image from the dataset after preprocessing"""
     img = np.transpose(img.numpy(), (1, 2, 0))
     mean = np.array(preprocess.mean)
     std = np.array(preprocess.std)
@@ -132,8 +133,14 @@ def valid(model, loader) -> float:
 
 
 def run_epoch(model, optimizer, criterion, loader, optimizer2=None) -> None:
-    """pass"""
-    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    """Runs one epoch of model training.
+    :param model: ViT model to be trained,
+    :param optimizer: optimizer to be used during training,
+    :param criterion: criterion of comparison - predictions vs. labels,
+    :param loader: loaded dataset via DataLoader,
+    :param optimizer2: second optimizer used for unfreezed pretrained weights;
+    """
+    
     model.train()
     N: int = 0
     
@@ -210,7 +217,7 @@ def train_with_params(params: dict, criterion,  datasets: dict, ViT_path: str,
 
 
 def make_params_grid(param_grid, max_num_sets=None, randomize=True):
-    """Return a Grid of parameters for loading data and tarining model"""
+    """Returns a Grid of parameters for loading data and tarining model"""
     to_list = lambda x: [x] if not isinstance(x, Iterable) else x
 
     params = {k: to_list(v) for k, v in param_grid.items()}
@@ -224,8 +231,8 @@ def make_params_grid(param_grid, max_num_sets=None, randomize=True):
 def find_best_params(param_grid, max_num_sets, criterion, datasets, ViT_path: str,
                     unfreezed=False, at_beginning=False,
                     ViT_best_path: str = "BEST_PARAMS_MODEL.pt") -> Dict:
+    """Resturns a dictionary with the best hyperparameters for model training and data loading"""
 
-    """Resturns a dictionary with best parameters for model training and loading the data"""
     best_params = {}
     best_valid_acc = 0.0
 
