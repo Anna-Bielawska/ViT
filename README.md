@@ -1,9 +1,10 @@
 # ViT
-Individual project - Vision transformers with early exits
-* TO DO:
-- clean up both notebook files, import functions and classes
-- use inheritance in "ViT - Early Exits" to create a custom ViT with classification heads
-- fix parameter freezing in "ViT - Early Exits", classification heads are not being trained
-- create "scripts" folder
-- move python scripts there
-- work on import errors resolution (different folders, use sys library)
+Individual project 2022/23 - Vision transformers with early exits
+
+Used pretrained weights and base model from torchvision: 
+https://github.com/pytorch/vision/blob/main/torchvision/models/vision_transformer.py
+
+Dataset used – Oxford Flowers102: 
+https://pytorch.org/vision/stable/generated/torchvision.datasets.Flowers102.html
+
+Other useful information can be found in the report.pdf.
